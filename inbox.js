@@ -1,16 +1,15 @@
 document.addEventListener('DOMContentLoaded', function() {
 
   // Use buttons to toggle between views
-  document.querySelector('#inbox').addEventListener('click', () => load_mailbox('inbox'));
-  document.querySelector('#sent').addEventListener('click', () => load_mailbox('sent'));
-  document.querySelector('#archived').addEventListener('click', () => load_mailbox('archive'));
-  document.querySelector('#compose').addEventListener('click', compose_email);
+  document.querySelector('#inbox').addEventListener('click', function() { load_mailbox('inbox') });
+  document.querySelector('#sent').addEventListener('click', function() { load_mailbox('sent') });
+  document.querySelector('#archived').addEventListener('click', function() { load_mailbox('archive') });
+  document.querySelector('#compose').addEventListener('click', function() { compose_email() });
   // Add event listener to the form
   document.querySelector("#compose-form").addEventListener("submit", send_email);
 
   // By default, load the inbox
   load_mailbox('inbox');
-  console.log("load inbox");
 });
 
 function compose_email() {
@@ -23,8 +22,6 @@ function compose_email() {
   document.querySelector('#compose-recipients').value = '';
   document.querySelector('#compose-subject').value = '';
   document.querySelector('#compose-body').value = '';
-  console.log("compose email");
-
 }
 
 function load_mailbox(mailbox) {
@@ -35,45 +32,19 @@ function load_mailbox(mailbox) {
 
   // Show the mailbox name
   document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
+  document.querySelector('#eview').innerHTML = "";
 
-  fetch('/emails/inbox')
-  .then(response => response.json())
-  .then(emails => {
-      // Print emails
-      console.log(emails);
+  if(mailbox === 'inbox')
+  {
+     console.log('inbox');
 
-	tbl = document.createElement('table');
-	tbl.style.width = '100px';
-  	tbl.style.border = '1px solid black';
+     fetch('/emails/inbox')
+    	.then(response => response.json())
+    	.then(emails => {
+        // Print emails
+        console.log(emails);
 
 	emails.forEach((mail) => {
-		
-		var sender = document.createElement("div");
-		sender.innerHTML = mail["sender"];
-		var subject = document.createElement("div");
-		subject.innerHTML = mail["subject"];
-		var body= document.createElement("div");
-		body.innerHTML = mail["body"];
-
-  		document.querySelector("#emails-view").appendChild(sender);
-  		document.querySelector("#emails-view").appendChild(subject);
-		document.querySelector("#emails-view").appendChild(body);
-                document.querySelector("#emails-view").appendChild(document.createElement("hr"));
-
-		var tbl_sender = document.createElement("div");
-		tbl_sender.innerHTML = mail["sender"];
-		var tbl_subject = document.createElement("div");
-		tbl_subject.innerHTML = mail["subject"];
-		var tbl_body = document.createElement("div");
-		tbl_subject.innerHTML = mail["body"];
-		
-		const tr = tbl.insertRow();
-		const td = tr.insertCell();
-		td.appendChild(tbl_sender);
-		const td2 = tr.insertCell();
-		td2.appendChild(tbl_subject);
-		const td3 = tr.insertCell();
-		td3.appendChild(tbl_body);
 
 		var link = document.createElement("a");
 		link.className = "list-group-item list-group-item-action";
@@ -86,17 +57,85 @@ function load_mailbox(mailbox) {
 
 		var heading = document.createElement("h5");
 		heading.className = "mb-1";
-		heading.innerHTML = "hallo welt";
+		heading.innerHTML = "From: " + mail["sender"];
 		
 		div.appendChild(heading);
 
-		document.querySelector("#eview").appendChild(link);
+		var timestampText = document.createElement("small");
+		timestampText.innerHTML = mail["timestamp"];
+
+		div.appendChild(timestampText);
+
+		var middleText = document.createElement("p");
+		middleText.className = "mb-1";
+		middleText.innerHTML = mail["subject"];
+
+		link.appendChild(middleText);
+
+		var bottomText = document.createElement("small");
+		bottomText.innerHTML = mail["body"];
+
+		link.appendChild(bottomText);
+
+		document.querySelector("#emails-view").appendChild(link);
+		
+		});
+
 	});
 
-	document.querySelector("#emails-view").appendChild(tbl);
+  }
+  else if (mailbox === 'sent')
+  {
+     console.log('sent');
+     fetch('/emails/sent')
+    	.then(response => response.json())
+    	.then(emails => {
+        // Print emails
+        console.log(emails);
 
-      // ... do something else with emails ...
-});
+	emails.forEach((mail) => {
+
+		var link = document.createElement("a");
+		link.className = "list-group-item list-group-item-action";
+		link.setAttribute("href","");
+
+		var div = document.createElement("div");
+		div.className = "d-flex w-100 justify-content-between";
+
+		link.appendChild(div);
+
+		var heading = document.createElement("h5");
+		heading.className = "mb-1";
+		heading.innerHTML = "To: " + mail["recipients"];
+		
+		div.appendChild(heading);
+
+		var timestampText = document.createElement("small");
+		timestampText.innerHTML = mail["timestamp"];
+
+		div.appendChild(timestampText);
+
+		var middleText = document.createElement("p");
+		middleText.className = "mb-1";
+		middleText.innerHTML = mail["subject"];
+
+		link.appendChild(middleText);
+
+		var bottomText = document.createElement("small");
+		bottomText.innerHTML = mail["body"];
+
+		link.appendChild(bottomText);
+
+		document.querySelector("#emails-view").appendChild(link);
+		
+		});
+
+	});
+  }
+  else
+  {
+	console.log('archive');
+  }
 
 }
 
@@ -110,6 +149,7 @@ function send_email(event) {
   const body = document.querySelector("#compose-body").value;
 
   console.log(mail_to);
+
 
   fetch('/emails', {
     method: 'POST',
