@@ -77,8 +77,10 @@ function load_mailbox(mailbox) {
 
 		link.appendChild(bottomText);
 
+		link.addEventListener("click", () => read_email(mail["id"]));
+
 		document.querySelector("#emails-view").appendChild(link);
-		
+
 		});
 
 	});
@@ -125,6 +127,8 @@ function load_mailbox(mailbox) {
 		bottomText.innerHTML = mail["body"];
 
 		link.appendChild(bottomText);
+		
+		link.addEventListener("click", () => read_email(mail["id"]));
 
 		document.querySelector("#emails-view").appendChild(link);
 		
@@ -137,6 +141,11 @@ function load_mailbox(mailbox) {
 	console.log('archive');
   }
 
+}
+
+function read_email(id) {
+	 event.preventDefault();
+	console.log("read email");
 }
 
 function send_email(event) {
