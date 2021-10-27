@@ -72,15 +72,10 @@ function load_mailbox(mailbox) {
 
 		link.appendChild(middleText);
 
-		var bottomText = document.createElement("small");
-		bottomText.innerHTML = mail["body"];
-
-		link.appendChild(bottomText);
-
 		link.addEventListener("click", () => read_email(mail["id"]));
 
 		document.querySelector("#emails-view").appendChild(link);
-
+		
 		});
 
 	});
@@ -123,14 +118,10 @@ function load_mailbox(mailbox) {
 
 		link.appendChild(middleText);
 
-		var bottomText = document.createElement("small");
-		bottomText.innerHTML = mail["body"];
-
-		link.appendChild(bottomText);
-		
 		link.addEventListener("click", () => read_email(mail["id"]));
 
 		document.querySelector("#emails-view").appendChild(link);
+
 		
 		});
 
@@ -144,8 +135,86 @@ function load_mailbox(mailbox) {
 }
 
 function read_email(id) {
-	 event.preventDefault();
+	
+	event.preventDefault();
 	console.log("read email");
+
+	fetch(`/emails/${id}`)
+    	.then(response => response.json())
+    	.then(mail_result => {
+
+
+/*		
+
+
+
+		var timestamp = document.createElement("strong");
+		timestamp.innerHTML = "Timestamp:";
+		eview.appendChild(br);
+		eview.appendChild(timestamp);
+		eview.innerHTML += " " + mail_result["timestamp"];
+
+		var hr = document.createElement("hr");
+
+		eview.appendChild(hr);
+
+		eview.innerHTML += mail_result["body"];*/
+
+		document.querySelector("#emails-view").innerHTML = `<strong>From: </strong>${mail_result["sender"]}`
+
+		var br = document.createElement("br");
+		document.querySelector("#emails-view").appendChild(br);
+
+		var to = document.createElement("strong");
+		to.innerHTML = "To:";		
+		document.querySelector("#emails-view").appendChild(to);
+
+		mail_result.recipients.forEach(element => document.querySelector("#emails-view").innerHTML += " " + element);
+
+		document.querySelector("#emails-view").appendChild(br);
+
+		var subject = document.createElement("strong");
+		subject.innerHTML = "Subject:";
+		document.querySelector("#emails-view").appendChild(br);
+		document.querySelector("#emails-view").appendChild(subject);
+		document.querySelector("#emails-view").innerHTML += " " + mail_result["subject"];
+
+		document.querySelector("#emails-view").appendChild(br);
+
+
+		var timestamp = document.createElement("strong");
+		timestamp.innerHTML = "Timestamp:";
+		document.querySelector("#emails-view").appendChild(timestamp);
+		document.querySelector("#emails-view").innerHTML += " " + mail_result["timestamp"];
+
+		var hr = document.createElement("hr");
+
+		document.querySelector("#emails-view").appendChild(hr);
+
+		document.querySelector("#emails-view").innerHTML += mail_result["body"];
+
+
+		document.querySelector("#emails-view").appendChild(hr);
+
+		var replyButton = document.createElement("button");
+		replyButton.className = "btn btn-sm btn-outline-primary";
+		replyButton.innerHTML = "Reply";
+		replyButton.id = "btn_reply";
+		replyButton.addEventListener('click', function() { reply_email() });
+
+		document.querySelector("#emails-view").appendChild(replyButton);
+
+		
+    	})
+    	.catch(error => console.log(error));
+
+
+
+}
+
+function reply_email() {
+
+	console.log("reply button pressed");
 }
 
 function send_email(event) {
