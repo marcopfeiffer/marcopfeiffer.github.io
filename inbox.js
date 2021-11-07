@@ -74,6 +74,17 @@ function load_mailbox(mailbox) {
 
 		link.addEventListener("click", () => read_email(mail["id"]));
 
+
+		if(mail["read"])
+		{
+			console.log("mail status: read");
+			link.style.backgroundColor = "lightgrey";
+		}
+		else
+		{
+			console.log("mail status: not read");
+		}
+
 		document.querySelector("#emails-view").appendChild(link);
 		
 		});
@@ -84,6 +95,7 @@ function load_mailbox(mailbox) {
   else if (mailbox === 'sent')
   {
      console.log('sent');
+
      fetch('/emails/sent')
     	.then(response => response.json())
     	.then(emails => {
@@ -139,15 +151,21 @@ function read_email(id) {
 	event.preventDefault();
 	console.log("read email");
 
+	console.log(`set mail: ${id} to status read`);
+
+	fetch(`/emails/${id}`, {
+  	method: 'PUT',
+  	body: JSON.stringify({
+      		read: true
+  		})
+	})
+
 	fetch(`/emails/${id}`)
     	.then(response => response.json())
     	.then(mail_result => {
 
 
 /*		
-
-
-
 		var timestamp = document.createElement("strong");
 		timestamp.innerHTML = "Timestamp:";
 		eview.appendChild(br);
@@ -200,7 +218,7 @@ function read_email(id) {
 		replyButton.className = "btn btn-sm btn-outline-primary";
 		replyButton.innerHTML = "Reply";
 		replyButton.id = "btn_reply";
-		replyButton.addEventListener('click', function() { reply_email() });
+		replyButton.addEventListener('click', function() { reply_email(mail_result["sender"], mail_result["subject"]) });
 
 		document.querySelector("#emails-view").appendChild(replyButton);
 
@@ -212,9 +230,12 @@ function read_email(id) {
 
 }
 
-function reply_email() {
+function reply_email(sender, subject) {
 
 	console.log("reply button pressed");
+	compose_email();
+	document.querySelector('#compose-recipients').value = sender;
+	document.querySelector('#compose-subject').value = "RE: " + subject;
 }
 
 function send_email(event) {
