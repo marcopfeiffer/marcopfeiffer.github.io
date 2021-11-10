@@ -141,7 +141,50 @@ function load_mailbox(mailbox) {
   }
   else
   {
-	console.log('archive');
+     console.log('archive');
+
+     fetch('/emails/archive')
+    	.then(response => response.json())
+    	.then(emails => {
+        // Print emails
+        console.log(emails);
+
+	emails.forEach((mail) => {
+
+		var link = document.createElement("a");
+		link.className = "list-group-item list-group-item-action";
+		link.setAttribute("href","");
+
+		var div = document.createElement("div");
+		div.className = "d-flex w-100 justify-content-between";
+
+		link.appendChild(div);
+
+		var heading = document.createElement("h5");
+		heading.className = "mb-1";
+		heading.innerHTML = "To: " + mail["recipients"];
+		
+		div.appendChild(heading);
+
+		var timestampText = document.createElement("small");
+		timestampText.innerHTML = mail["timestamp"];
+
+		div.appendChild(timestampText);
+
+		var middleText = document.createElement("p");
+		middleText.className = "mb-1";
+		middleText.innerHTML = mail["subject"];
+
+		link.appendChild(middleText);
+
+		link.addEventListener("click", () => read_email(mail["id"]));
+
+		document.querySelector("#emails-view").appendChild(link);
+
+		
+		});
+
+	});
   }
 
 }
@@ -149,6 +192,7 @@ function load_mailbox(mailbox) {
 function read_email(id) {
 	
 	event.preventDefault();
+
 	console.log("read email");
 
 	console.log(`set mail: ${id} to status read`);
@@ -164,6 +208,9 @@ function read_email(id) {
     	.then(response => response.json())
     	.then(mail_result => {
 
+		userEmail = document.querySelector('#userEmail').innerHTML;
+		console.log("User Email: " + userEmail);
+		console.log("sender: " + mail_result["sender"]);
 
 /*		
 		var timestamp = document.createElement("strong");
@@ -215,12 +262,40 @@ function read_email(id) {
 		document.querySelector("#emails-view").appendChild(hr);
 
 		var replyButton = document.createElement("button");
-		replyButton.className = "btn btn-sm btn-outline-primary";
+		replyButton.className = "btn btn-sm btn-outline-primary mr-1";
 		replyButton.innerHTML = "Reply";
 		replyButton.id = "btn_reply";
-		replyButton.addEventListener('click', function() { reply_email(mail_result["sender"], mail_result["subject"]) });
+		replyButton.addEventListener('click', function() { reply_email(mail_result["id"]) });
 
 		document.querySelector("#emails-view").appendChild(replyButton);
+
+		if(userEmail === mail_result["sender"])
+		{
+			console.log("Outbox");
+		}
+		else
+		{
+			if(mail_result["archived"])
+			{
+				var archiveButton = document.createElement("button");
+				archiveButton.className = "btn btn-sm btn-outline-primary";
+				archiveButton.innerHTML = "Unarchive";
+				archiveButton.id = "btn_archive";
+				archiveButton.addEventListener('click', function() { unarchive_email(mail_result["id"]) });
+				document.querySelector("#emails-view").appendChild(archiveButton);
+			}
+			else
+			{
+				var archiveButton = document.createElement("button");
+				archiveButton.className = "btn btn-sm btn-outline-primary";
+				archiveButton.innerHTML = "Archive";
+				archiveButton.id = "btn_archive";
+				archiveButton.addEventListener('click', function() { archive_email(mail_result["id"]) });
+				document.querySelector("#emails-view").appendChild(archiveButton);
+			}
+
+			console.log("Inbox");
+		}
 
 		
     	})
@@ -230,12 +305,62 @@ function read_email(id) {
 
 }
 
-function reply_email(sender, subject) {
+function reply_email(id) {
 
 	console.log("reply button pressed");
 	compose_email();
-	document.querySelector('#compose-recipients').value = sender;
-	document.querySelector('#compose-subject').value = "RE: " + subject;
+
+	fetch(`/emails/${id}`)
+    	.then(response => response.json())
+    	.then(mail_result => {
+
+		document.querySelector('#compose-recipients').value = mail_result["sender"];
+		if(mail_result["subject"].includes("RE: "))
+		{
+			document.querySelector('#compose-subject').value = mail_result["subject"];
+		}
+		else
+		{
+			document.querySelector('#compose-subject').value = "RE: " + mail_result["subject"];
+		}
+		document.querySelector('#compose-body').value = "On " + mail_result["timestamp"] + " " + mail_result["sender"] + " wrote:\n" +  mail_result["body"]
+	
+	});
+
+
+}
+
+function archive_email(id) {
+
+	console.log("archive button pressed");
+
+	console.log(`set mail: ${id} to status archived`);
+
+	fetch(`/emails/${id}`, {
+  	method: 'PUT',
+  	body: JSON.stringify({
+      		archived: true
+  		})
+	})
+
+	setTimeout(() => {  load_mailbox("inbox"); }, 1000);
+}
+
+function unarchive_email(id) {
+
+	console.log("unarchive button pressed");
+
+	console.log(`set mail: ${id} to status unarchived`);
+
+	fetch(`/emails/${id}`, {
+  	method: 'PUT',
+  	body: JSON.stringify({
+      		archived: false
+  		})
+	})
+
+
+	setTimeout(() => {  load_mailbox("inbox"); }, 1000);
 }
 
 function send_email(event) {
@@ -249,6 +374,7 @@ function send_email(event) {
 
   console.log(mail_to);
 
+  load_mailbox('sent')
 
   fetch('/emails', {
     method: 'POST',
